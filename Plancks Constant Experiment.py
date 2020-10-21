@@ -27,6 +27,7 @@ import random
 import pickle
 
 import matplotlib
+import matplotlib.ticker as ticker
 matplotlib.use('Qt5Agg')
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -85,6 +86,7 @@ class Planck_experiment() :
         self.analysis_results = {}
         self.knee_voltages = []
         
+        # this term keeps track if the LED color was last: True) updated with new data, False) had experimental results processing 
         self.clr_df_updated = {}
         
         self.save_folder = None
@@ -403,6 +405,16 @@ class run_experiment(QThread) :
         self.canvas.axes.set_ylabel('Voltage After LED [V]', fontsize=fontsize)
         self.canvas.axes.set_xticklabels(self.canvas.axes.get_xticks(), fontsize=fontsize)
         self.canvas.axes.set_yticklabels(self.canvas.axes.get_yticks(), fontsize=fontsize)
+        
+        last_val = self.experiment.current_data[-1]
+        if last_val < 0.5 :
+            str_fmt = "{x:.3f}"
+        if last_val < 1 :
+            str_fmt = "{x:.2f}"
+        else :
+            str_fmt = "{x:.1f}"
+        self.canvas.axes.xaxis.set_major_formatter(ticker.StrMethodFormatter("{x:.3f}"))
+        self.canvas.axes.yaxis.set_major_formatter(ticker.StrMethodFormatter("{x:.3f}"))
         self.canvas.fig.tight_layout()
         
         self.canvas.draw()
@@ -452,7 +464,7 @@ class MainWindow(QMainWindow) :
         self.title = 'Planck\'s Constant Experiment'
         self.setWindowTitle(self.title)
         
-        self.main_layout = QVBoxLayout(self)
+        self.main_layout = QVBoxLayout()
         
         self.left = 0
         self.top = 0
@@ -641,7 +653,7 @@ class exp_controls(QWidget) :
         self.layout.addWidget(self.exp_prog_bar, 5, 0, 1, 2)
         
         
-        self.control_layout = QGridLayout(self) # controls to run experiment
+        self.control_layout = QGridLayout() # controls to run experiment
         row = 0
         
         label = QLabel("")
@@ -741,7 +753,7 @@ class exp_controls(QWidget) :
     
     def run_experiment(self) :
         #self.parent.experiment.current_data = []
-        self.run_exp_btn.setEnabled(False)
+        self.disable_controls()
         led_color = self.exp_led_color.currentText()
         self.running_exp = run_experiment(experiment=self.parent.experiment, canvas=self.data_plot)
         self.running_exp.notifyProgress.connect(self.exp_prog_update)
@@ -756,15 +768,33 @@ class exp_controls(QWidget) :
             led_color = self.exp_led_color.currentText()
         
         #self.current_results = self.parent.experiment.current_data
-        self.run_exp_btn.setEnabled(True)
         self.update_plot()
         
         self.parent.experiment.add_exp_data(led_color)
         
-        #if led_color != "" :
-        #    df = self.parent.experiment.dfs[ led_color ]
-        #    col_name = 'LED %i [V]' %len( df.columns )
-        #    df[ col_name ] = self.current_results
+        self.enable_controls()
+        
+    def disable_controls(self) :
+        self.voltage_corr.setEnabled(False)
+        self.add_new_led.setEnabled(False)
+        self.exp_led_color.setEnabled(False)
+        self.run_exp_btn.setEnabled(False)
+        self.btn_get_folder.setEnabled(False)
+        self.btn_load.setEnabled(False)
+        self.btn_save.setEnabled(False)
+        self.parent.main_tabs.setTabEnabled(0, False)
+        self.parent.main_tabs.setTabEnabled(2, False)
+    
+    def enable_controls(self) :
+        self.voltage_corr.setEnabled(True)
+        self.add_new_led.setEnabled(True)
+        self.exp_led_color.setEnabled(True)
+        self.run_exp_btn.setEnabled(True)
+        self.btn_get_folder.setEnabled(True)
+        self.btn_load.setEnabled(True)
+        self.btn_save.setEnabled(True)
+        self.parent.main_tabs.setTabEnabled(0, True)
+        self.parent.main_tabs.setTabEnabled(2, True)
     
     def update_plot(self) :
         self.data_plot.axes.cla()
@@ -772,9 +802,12 @@ class exp_controls(QWidget) :
         current_data = self.parent.experiment.current_data
         xdata = np.arange(len(current_data))*5.0/4095
         
+        fontsize = 15
         self.data_plot.axes.plot(xdata, current_data, 'r')
-        self.data_plot.axes.set_xlabel('Supplied Voltage [V]')
-        self.data_plot.axes.set_ylabel('Voltage After LED [V]')
+        self.data_plot.axes.set_xlabel('Supplied Voltage [V]', fontsize=fontsize)
+        self.data_plot.axes.set_ylabel('Voltage After LED [V]', fontsize=fontsize)
+        self.data_plot.axes.set_xticklabels(self.data_plot.axes.get_xticks(), fontsize=fontsize)
+        self.data_plot.axes.set_yticklabels(self.data_plot.axes.get_yticks(), fontsize=fontsize)
         self.data_plot.fig.tight_layout()
         
         self.data_plot.draw()
@@ -875,6 +908,7 @@ class results_tab(QWidget) :
         super(QWidget, self).__init__(parent)
         self.parent = parent
         max_widget_width = 150
+        self.current_fig = ""
         
         self.layout = QGridLayout(self) # plot and progress bar
         
@@ -884,14 +918,21 @@ class results_tab(QWidget) :
         self.results_prog_bar = QProgressBar()
         self.layout.addWidget(self.results_prog_bar, 5, 0, 1, 2)
         
-        self.control_layout = QGridLayout(self)
+        self.control_layout = QGridLayout()
         row = 0
         
         label = QLabel("")
         label.setMaximumWidth( max_widget_width )
         self.control_layout.addWidget(label, row, 0); row += 1
         
-        label_txt = "Select Analysis Results:"
+        label_txt = "Analysis Results"
+        label = QLabel(label_txt)
+        label.setMaximumWidth( max_widget_width )
+        self.control_layout.addWidget(label, row, 0); row += 1
+        
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        
+        label_txt = "Select LED Color Results:"
         label = QLabel(label_txt)
         label.setMaximumWidth( max_widget_width )
         self.control_layout.addWidget(label, row, 0); row += 1
@@ -899,6 +940,13 @@ class results_tab(QWidget) :
         self.qcb_clrs = QComboBox(self)
         self.qcb_clrs.currentIndexChanged.connect(self.selected_color)
         self.control_layout.addWidget(self.qcb_clrs, row, 0); row += 1
+        
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        
+        self.qbtn_calc_planck = QPushButton("Calculate Planck's Constant")
+        self.qbtn_calc_planck.clicked.connect(self.plot_plancks_constant)
+        self.qbtn_calc_planck.setEnabled(False)
+        self.control_layout.addWidget(self.qbtn_calc_planck, row, 0); row += 1
         
         self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
         
@@ -911,7 +959,6 @@ class results_tab(QWidget) :
     def update_clr_list(self) :
         num_clrs = len(self.parent.experiment.colors)
         
-        #if self.qcb_clrs.count() != len(self.parent.experiment.colors) + (2 if num_clrs>1 else 0) :
         if self.parent.added_new_color :
             self.qcb_clrs.clear()
             unknown_clrs = []
@@ -920,35 +967,31 @@ class results_tab(QWidget) :
                     unknown_clrs.append(clr)
                     continue
                 self.qcb_clrs.addItem(clr)
+            if self.qcb_clrs.count() > 1 :
+                self.qbtn_calc_planck.setEnabled(True)
+            else :
+                self.qbtn_calc_planck.setEnabled(False)
             if len(unknown_clrs) > 0 :
                 self.qcb_clrs.insertSeparator(self.qcb_clrs.count())
                 for clr in unknown_clrs :
                     self.qcb_clrs.addItem(clr)
-            if num_clrs > 1 :
-                self.qcb_clrs.insertSeparator(self.qcb_clrs.count())
-                self.qcb_clrs.addItem( 'Calculate Planck\'s Constant' )
             self.parent.added_new_color = False
-        elif self.qcb_clrs.count() > 0 : # update plot for current color
-            clr = self.qcb_clrs.currentText()
-            if clr != 'Calculate Planck\'s Constant' :
-                self.parent.experiment.process_results(clr)
-                self.parent.experiment.create_LED_result_plot(self.data_plot, clr)
-            else :
-                self.parent.experiment.process_results(progress_bar=self.results_prog_bar)
-                self.parent.experiment.calc_Plancks_constant()
-                self.parent.experiment.plot_knee_voltages(self.data_plot)
+        if self.current_fig != '' :
+            if self.current_fig == 'Plancks Constant Results' :
+                self.plot_plancks_constant()
+            elif self.parent.experiment.clr_df_updated[self.current_fig] :
+                self.qcb_clrs.setCurrentText(self.current_fig)
+                self.parent.experiment.process_results(self.current_fig)
+                self.parent.experiment.create_LED_result_plot(self.data_plot, self.current_fig)
     
     def selected_color(self) :
         clr = self.qcb_clrs.currentText()
         if clr == '' :
             pass
-        elif clr != 'Calculate Planck\'s Constant' :
+        else :
+            self.current_fig = clr
             self.parent.experiment.process_results(clr)
             self.parent.experiment.create_LED_result_plot(self.data_plot, clr)
-        else :
-            self.parent.experiment.process_results(progress_bar=self.results_prog_bar)
-            self.parent.experiment.calc_Plancks_constant()
-            self.parent.experiment.plot_knee_voltages(self.data_plot)
     
     def save_current_fig(self) :
         if self.parent.experiment.save_folder is None :
@@ -960,6 +1003,17 @@ class results_tab(QWidget) :
         else :
             clr = self.qcb_clrs.currentText()
             self.parent.experiment.save_LED_figure_result(self.data_plot, clr)
+    
+    def plot_plancks_constant(self) :
+        self.qcb_clrs.setCurrentIndex(-1)
+        self.current_fig = 'Plancks Constant Results'
+        self.calc_plancks_constant()
+    
+    def calc_plancks_constant(self) :
+        self.parent.experiment.process_results(progress_bar=self.results_prog_bar)
+        self.parent.experiment.calc_Plancks_constant()
+        self.parent.experiment.plot_knee_voltages(self.data_plot)
+        
 
 
 
