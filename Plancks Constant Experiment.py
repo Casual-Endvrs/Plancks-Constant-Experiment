@@ -468,7 +468,7 @@ class MainWindow(QMainWindow) :
         
         
         
-        self.main_tabs.addTab(self.intro_tab, "Intro Tab")
+        self.main_tabs.addTab(self.intro_tab, "Introduction")
         self.main_tabs.addTab(self.exp_controls, "Experimental Controls")
         self.main_tabs.addTab(self.results_tab, "Experimental Analysis")
         
