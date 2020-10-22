@@ -36,7 +36,25 @@ import matplotlib.pyplot as plt
 
 def waveLengthToRGB(Wavelength) :
     """
-    This is based on the work from: https://code.i-harness.com/en/q/167802
+    This is based on the source: https://code.i-harness.com/en/q/167802
+    This function returns the corresponding RGB code for a given wavelength,
+        specified in nm, that is within the visible range, 380 nm to 780. 
+        If the wavelength is not visible, the RGB code for black is returned.
+
+    Parameters
+    ----------
+    Wavelength : float or int
+        This is the wavelength of the light, with units nm, that is to be 
+        converted to an RGB color code.
+
+    Returns
+    -------
+    Red : float
+        Red component.
+    Green : float
+        Green component.
+    Blue : float
+        Blue component.
     """
     if Wavelength >= 380 and Wavelength<440 :
         Red = -(Wavelength - 440) / (440 - 380);
@@ -70,10 +88,85 @@ def waveLengthToRGB(Wavelength) :
     return (Red, Green, Blue)
 
 def linear_fn(x, m, b) :
+    """
+    This function returns the simple equation: y=mx+b.
+
+    Parameters
+    ----------
+    x : float
+        Independent variable.
+    m : float
+        Defines the graphs slope.
+    b : float
+        Defines the graphs y-intercept.
+
+    Returns
+    -------
+    float
+        The result of m*x+b.
+
+    """
     return m*x+b
 
 class Planck_experiment() :
+    """
+    This class is used to store all pertinant information about the Arduino
+        and experimental results.
+    
+    Attributes
+    ----------
+    port_str : str
+        Stores the port string that is required to connect to the Arduino.
+    
+    baud : int
+        Bits per second communication rate to be used with the Arduino. This
+        value must be the same as that used in the Arduino sketch.
+    
+    arduino : pySerial object
+        Sorts the pySerial object that is attributed to the Arduino. All serial 
+        commands to the Arduino are sent via this object.
+    
+    colors : list[ str ]
+        This is a list of strings containing the color label for each LED that 
+        is used for the experiment.
+    
+    wavelengths : dictionary[ str:int ]
+        Dictionary used to convert an LED's color label to that LED's wavelength.
+    
+    colors_known_wavelength : list[ int ]
+        A list storing the wavelength
+    
+    wavelengths_analysis
+    
+    dfs
+    
+    analysis_results
+    
+    knee_voltages
+    
+    clr_df_updated
+    
+    save_folder
+    
+    current_data
+    
+    calcd_planck_constant
+    
+    plancks_fit_results
+    
+    Methods
+    -------
+    
+    """
     def __init__(self) :
+        """
+        Constructs the Planck_experiment class.
+
+        Returns
+        -------
+        None.
+
+        """
         self.port_str = ""
         self.baud = 9600
         self.arduino = None
@@ -86,7 +179,9 @@ class Planck_experiment() :
         self.analysis_results = {}
         self.knee_voltages = []
         
-        # this term keeps track if the LED color was last: True) updated with new data, False) had experimental results processing 
+        # This term keeps track if the LED color was last: 
+        #   True) updated with new data, 
+        #   False) had experimental results processing.
         self.clr_df_updated = {}
         
         self.save_folder = None
@@ -96,6 +191,20 @@ class Planck_experiment() :
         self.plancks_fit_results = None
     
     def connect_to_arduino(self, port_str) :
+        """
+        
+
+        Parameters
+        ----------
+        port_str : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        str
+            DESCRIPTION.
+
+        """
         if self.arduino is not None :
             self.arduino.close()
         
@@ -109,10 +218,31 @@ class Planck_experiment() :
             return 'Connection Failure'
     
     def disconnect_from_arduino(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         if self.arduino is not None :
             self.arduino.close()
     
     def add_exp_data(self, color) :
+        """
+        
+
+        Parameters
+        ----------
+        color : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         if color in self.colors :
             df = self.dfs[ color ]
             col_name = 'LED %i [V]' %len( df.columns )
@@ -120,6 +250,21 @@ class Planck_experiment() :
             self.clr_df_updated[color] = True
     
     def add_color(self, color, nm) :
+        """
+        
+
+        Parameters
+        ----------
+        color : TYPE
+            DESCRIPTION.
+        nm : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.colors.append( color )
         self.wavelengths[color] = nm
         self.dfs[color] = pd.DataFrame()
@@ -127,14 +272,38 @@ class Planck_experiment() :
         self.clr_df_updated[color] = True
     
     def turn_on_Vcc_correction(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         if self.arduino is not None :
             self.arduino.write( b'CVcc,t/' )
     
     def turn_off_Vcc_correction(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         if self.arduino is not None :
             self.arduino.write( b'CVcc,f/' )
     
     def dump_dfs(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         if self.save_folder is not None :
             with open(os.path.join(self.save_folder, 'LED_wavelengths.pkl'), 'wb') as f :
                 pickle.dump(self.wavelengths, f)
@@ -145,6 +314,14 @@ class Planck_experiment() :
                     pickle.dump(self.dfs[clr], f)
 
     def save_dfs(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         if self.save_folder is not None :
             for clr in self.colors :
                 df = self.dfs[clr]
@@ -163,6 +340,19 @@ class Planck_experiment() :
                     f.write( '\r\n\r\n\r\n' )
     
     def load_dfs(self, progress_bar=None) :
+        """
+        
+
+        Parameters
+        ----------
+        progress_bar : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.save_folder is not None :
             pkl_fils = []
             
@@ -199,6 +389,21 @@ class Planck_experiment() :
                 progress_bar.setValue( 100 )
     
     def process_results(self, color=None, progress_bar=None) :
+        """
+        
+
+        Parameters
+        ----------
+        color : TYPE, optional
+            DESCRIPTION. The default is None.
+        progress_bar : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
         use_prog_bar = False
         if progress_bar is not None :
             use_prog_bar = True
@@ -259,6 +464,14 @@ class Planck_experiment() :
                 progress_bar.setValue( 100*(idx+1)/num_clrs )
     
     def calc_Plancks_constant(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.knee_voltages = []
         self.wavelengths_analysis = []
         self.colors_known_wavelength = []
@@ -296,6 +509,19 @@ class Planck_experiment() :
             self.calcd_planck_constant = results.values['m']/c_over_e
     
     def plot_knee_voltages(self, canvas) :
+        """
+        
+
+        Parameters
+        ----------
+        canvas : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         if self.calcd_planck_constant is not None and self.plancks_fit_results is not None :
             
             fit_result = self.plancks_fit_results.best_fit
@@ -310,15 +536,17 @@ class Planck_experiment() :
             for idx in np.arange( len(self.wavelengths_analysis) ) :
                 clr = waveLengthToRGB(self.wavelengths_analysis[idx])
                 canvas.axes.plot(x[idx], self.knee_voltages[idx], 'o', color='k', markersize=7)
-                canvas.axes.plot(x[idx], self.knee_voltages[idx], 'o', color=clr, markersize=5, label=self.colors_known_wavelength[idx])
+                canvas.axes.plot(x[idx], self.knee_voltages[idx], 'o', color=clr, markersize=5, 
+                                 label=self.colors_known_wavelength[idx])
             
             
             fontsize = 15
             error = 100 * ( self.calcd_planck_constant - 6.62607015e-34 ) / self.calcd_planck_constant
             canvas.axes.text(np.min(x), 0.95*np.max(self.knee_voltages), 
-                             "Experimental Result for\nPlanck\'s Constant: %.4e Js" %self.calcd_planck_constant, fontsize=fontsize)
+                "Experimental Result for\nPlanck\'s Constant: %.4e Js" %self.calcd_planck_constant, 
+                fontsize=fontsize)
             canvas.axes.text(np.min(x), 0.9*np.max(self.knee_voltages), 
-                             "Error: %.2f%%" %error, fontsize=fontsize)
+                "Error: %.2f%%" %error, fontsize=fontsize)
             
             canvas.axes.set_xlabel("LED Color Wavelength [1e6 1/nm]")
             canvas.axes.set_ylabel("Knee Voltage [V]")
@@ -330,6 +558,21 @@ class Planck_experiment() :
             canvas.draw()
     
     def create_LED_result_plot(self, canvas, color) :
+        """
+        
+
+        Parameters
+        ----------
+        canvas : TYPE
+            DESCRIPTION.
+        color : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         if color in self.colors :
             df = self.dfs[color]
             if not df.empty :
@@ -347,7 +590,8 @@ class Planck_experiment() :
                 
                 fontsize = 15
                 height = 0.95
-                canvas.axes.text(0.1, height*mx_val, 'LED Color: %s' %color, fontsize=fontsize); height -= 0.075
+                canvas.axes.text(0.1, height*mx_val, 'LED Color: %s' %color, 
+                                 fontsize=fontsize); height -= 0.075
                 if self.wavelengths[color] == '???' :
                     if self.calcd_planck_constant is not None :
                         h = self.calcd_planck_constant
@@ -357,15 +601,16 @@ class Planck_experiment() :
                         V = self.analysis_results[color][0]
                         calc_wavelength = h * c_over_e / V
                         
-                        canvas.axes.text(0.1, height*mx_val, 'Calculated Wavelength: %.0f nm' %(1e9*calc_wavelength), fontsize=fontsize); height -= 0.075
+                        canvas.axes.text(0.1, height*mx_val, 'Calculated Wavelength: %.0f nm' %(1e9*calc_wavelength), 
+                                         fontsize=fontsize); height -= 0.075
                     else :
-                        canvas.axes.text(0.1, height*mx_val, 'Calculated Wavelength: Unknown', fontsize=fontsize); height -= 0.075
+                        canvas.axes.text(0.1, height*mx_val, 'Calculated Wavelength: Unknown', 
+                                         fontsize=fontsize); height -= 0.075
                 else :
-                    canvas.axes.text(0.1, height*mx_val, 'Wavelength [nm]: %s' %self.wavelengths[color], fontsize=fontsize); height -= 0.075
-                #canvas.axes.text(0.1, height*mx_val, 'Fit Results:', fontsize=fontsize); height -= 0.075
-                #canvas.axes.text(0.1, height*mx_val, 'm: %.3f [unitless]' %self.analysis_results[color][1], fontsize=fontsize); height -= 0.075
-                #canvas.axes.text(0.1, height*mx_val, 'b: %.3f [V]' %self.analysis_results[color][2], fontsize=fontsize); height -= 0.075
-                canvas.axes.text(0.1, height*mx_val, 'V_knee: %.3f [V]' %self.analysis_results[color][0], fontsize=fontsize); height -= 0.075
+                    canvas.axes.text(0.1, height*mx_val, 'Wavelength [nm]: %s' %self.wavelengths[color], 
+                                     fontsize=fontsize); height -= 0.075
+                canvas.axes.text(0.1, height*mx_val, 'V_knee: %.3f [V]' %self.analysis_results[color][0], 
+                                 fontsize=fontsize); height -= 0.075
                 
                 canvas.axes.set_xlabel('Supplied Voltage [V]', fontsize=fontsize)
                 canvas.axes.set_ylabel('Voltage After LED [V]', fontsize=fontsize)
@@ -384,17 +629,57 @@ class Planck_experiment() :
                 canvas.draw()
     
     def save_LED_figure_result(self, canvas, clr) :
+        """
+        
+
+        Parameters
+        ----------
+        canvas : TYPE
+            DESCRIPTION.
+        clr : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         fil = clr+'-fit_result.png'
         canvas.fig.savefig(os.path.join(self.save_folder, fil), dpi=480)
 
 class run_experiment(QThread) :
+    """
+    """
     notifyProgress = pyqtSignal(int)
     def __init__(self, experiment, canvas=None) :
+        """
+        
+
+        Parameters
+        ----------
+        experiment : TYPE
+            DESCRIPTION.
+        canvas : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
         QThread.__init__(self)
         self.experiment = experiment
         self.canvas = canvas
     
     def update_plot(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.canvas.axes.cla()
         
         xdata = np.arange(len(self.experiment.current_data))*5.0/4095
@@ -420,6 +705,14 @@ class run_experiment(QThread) :
         self.canvas.draw()
     
     def run(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.experiment.current_data = []
         if self.experiment.arduino is None :
             return None
@@ -444,6 +737,15 @@ class run_experiment(QThread) :
 
 
 def get_avail_ports() :
+    """
+    
+
+    Returns
+    -------
+    avail_ports : TYPE
+        DESCRIPTION.
+
+    """
     list_ports = serial.tools.list_ports.comports()
     
     avail_ports = []
@@ -454,7 +756,17 @@ def get_avail_ports() :
 
 
 class MainWindow(QMainWindow) :
+    """
+    """
     def __init__(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         super().__init__()
         
         self.experiment = Planck_experiment()
@@ -492,10 +804,36 @@ class MainWindow(QMainWindow) :
         self.show()
     
     def tab_changed(self, idx) :
+        """
+        
+
+        Parameters
+        ----------
+        idx : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         if idx == 2 :
             self.results_tab.update_clr_list()
     
     def setup_experiment(self, port) :
+        """
+        
+
+        Parameters
+        ----------
+        port : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         result = self.experiment.connect_to_arduino(port)
         if result == 'Success' :
             self.exp_controls.enable_exp()
@@ -503,16 +841,31 @@ class MainWindow(QMainWindow) :
         elif result == 'Connection Failure' :
             title = "Arduino Connection Failure"
             warning_msg = "\n".join(["An error occured while attempting to connect to the Arduino.", 
-                                     "Please ensure that there are no other program connected to it;", 
-                                      "   for example, the Arduino IDE can cause connection issues.", 
-                                      "If no other programs are attempting to connect tothe Arduino,", 
-                                      "   press the reset button on your Arduino and then try again."])
+                "Please ensure that there are no other program connected to it;", 
+                 "   for example, the Arduino IDE can cause connection issues.", 
+                 "If no other programs are attempting to connect tothe Arduino,", 
+                 "   press the reset button on your Arduino and then try again."])
             
             warning_window = warningWindow(self)
             warning_window.build_window(title=title, msg=warning_msg)
 
 class intro_page(QWidget) :
+    """
+    """
     def __init__(self, parent) :
+        """
+        
+
+        Parameters
+        ----------
+        parent : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         super(QWidget, self).__init__(parent)
         max_widget_width = 150
         
@@ -619,6 +972,14 @@ class intro_page(QWidget) :
         self.search_for_devices()
     
     def search_for_devices(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.avail_ports = get_avail_ports()
         
         self.ports_selection.clear()
@@ -630,12 +991,35 @@ class intro_page(QWidget) :
             self.connect_btn.setEnabled(False)
     
     def connect_to_exp(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.connect_btn.setEnabled(False)
         port = self.avail_ports[ self.ports_selection.currentIndex() ]
         self.parent.setup_experiment(port)
 
 class exp_controls(QWidget) :
+    """
+    """
     def __init__(self, parent) :
+        """
+        
+
+        Parameters
+        ----------
+        parent : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         super(QWidget, self).__init__(parent)
         
         max_widget_width = 250
@@ -660,8 +1044,6 @@ class exp_controls(QWidget) :
         label.setMaximumWidth( max_widget_width )
         self.control_layout.addWidget(label, row, 0); row += 1
         
-        # self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
-        
         label_txt = "Set Voltage Correction:"
         label = QLabel(label_txt)
         label.setMaximumWidth( max_widget_width )
@@ -673,7 +1055,7 @@ class exp_controls(QWidget) :
         self.voltage_corr.currentIndexChanged.connect(self.update_voltage_correction)
         self.control_layout.addWidget(self.voltage_corr, row, 0); row += 1
         
-        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1
         
         label_txt = "Add new LED color"
         label = QLabel(label_txt)
@@ -706,7 +1088,7 @@ class exp_controls(QWidget) :
         self.add_new_led.clicked.connect(self.add_new_led_color)
         self.control_layout.addWidget(self.add_new_led, row, 0); row += 1
         
-        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1
         
         label_txt = "Experiment LED Color"
         label = QLabel(label_txt)
@@ -724,7 +1106,7 @@ class exp_controls(QWidget) :
         self.control_layout.addWidget(self.run_exp_btn, row, 0); row += 1
         
         
-        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1
         
         label = QLabel("")
         label.setMaximumWidth( max_widget_width )
@@ -749,9 +1131,25 @@ class exp_controls(QWidget) :
         self.setLayout(self.layout)
     
     def enable_exp(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.run_exp_btn.setEnabled(True)
     
     def run_experiment(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         #self.parent.experiment.current_data = []
         self.disable_controls()
         led_color = self.exp_led_color.currentText()
@@ -761,9 +1159,35 @@ class exp_controls(QWidget) :
         self.running_exp.finished.connect(lambda: self.get_current_data(led_color))
     
     def exp_prog_update(self, i) :
+        """
+        
+
+        Parameters
+        ----------
+        i : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.exp_prog_bar.setValue( i )
     
     def get_current_data(self, led_color=None) :
+        """
+        
+
+        Parameters
+        ----------
+        led_color : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
         if led_color is None :
             led_color = self.exp_led_color.currentText()
         
@@ -775,6 +1199,14 @@ class exp_controls(QWidget) :
         self.enable_controls()
         
     def disable_controls(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.voltage_corr.setEnabled(False)
         self.add_new_led.setEnabled(False)
         self.exp_led_color.setEnabled(False)
@@ -786,6 +1218,14 @@ class exp_controls(QWidget) :
         self.parent.main_tabs.setTabEnabled(2, False)
     
     def enable_controls(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.voltage_corr.setEnabled(True)
         self.add_new_led.setEnabled(True)
         self.exp_led_color.setEnabled(True)
@@ -797,6 +1237,14 @@ class exp_controls(QWidget) :
         self.parent.main_tabs.setTabEnabled(2, True)
     
     def update_plot(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.data_plot.axes.cla()
         
         current_data = self.parent.experiment.current_data
@@ -813,6 +1261,14 @@ class exp_controls(QWidget) :
         self.data_plot.draw()
     
     def update_voltage_correction(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         status = self.voltage_corr.currentText()
         if status == 'on' :
             self.parent.experiment.turn_on_Vcc_correction()
@@ -820,18 +1276,26 @@ class exp_controls(QWidget) :
             self.parent.experiment.turn_off_Vcc_correction()
     
     def add_new_led_color(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         label = self.color_label.text()
         wavelength_rng = self.color_wavelength_rng.text()
         
         w_rng = wavelength_rng.split('-')
         
         warning_msg = '\n'.join(["Wavelength entries must be interger values with units nanometers, nm.", 
-                                "Wavelength options can entered in three different way.", 
-                                "     1) Single wavelength to be used: \"435\"", 
-                                "     2) Wavelength range: \"435-450\" (An average of these values will be used for calculations)", 
-                                "     3) If the wavelength of the LED is to be calculated used the experimentally obtained", 
-                                "        value for Planck's constant, enter \"???\".", 
-                                "Note: exclude quotes when entering any values."])
+            "Wavelength options can entered in three different way.", 
+            "     1) Single wavelength to be used: \"435\"", 
+            "     2) Wavelength range: \"435-450\" (An average of these values will be used for calculations)", 
+            "     3) If the wavelength of the LED is to be calculated used the experimentally obtained", 
+            "        value for Planck's constant, enter \"???\".", 
+            "Note: exclude quotes when entering any values."])
         
         if label in self.parent.experiment.colors :
             title = "Color Label Error"
@@ -857,6 +1321,14 @@ class exp_controls(QWidget) :
             warning_window.build_window(title=title, msg=warning_msg)
     
     def get_save_folder(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         folder = os.getcwd()
         if self.parent.experiment.save_folder is not None :
             folder = self.parent.experiment.save_folder
@@ -864,6 +1336,14 @@ class exp_controls(QWidget) :
         self.parent.experiment.save_folder = folder
     
     def save_data(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         if self.parent.experiment.save_folder is None :
             title = "Save Error"
             warning_msg = '\n'.join(["No folder has been selected to save data.",
@@ -876,6 +1356,14 @@ class exp_controls(QWidget) :
             self.parent.experiment.save_dfs()
     
     def load_data(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         data_exists = False
         for clr in self.parent.experiment.colors :
             if not self.parent.experiment.dfs[clr].empty :
@@ -904,7 +1392,22 @@ class exp_controls(QWidget) :
             self.parent.added_new_color = True
 
 class results_tab(QWidget) :
+    """
+    """
     def __init__(self, parent) :
+        """
+        
+
+        Parameters
+        ----------
+        parent : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         super(QWidget, self).__init__(parent)
         self.parent = parent
         max_widget_width = 150
@@ -930,7 +1433,7 @@ class results_tab(QWidget) :
         label.setMaximumWidth( max_widget_width )
         self.control_layout.addWidget(label, row, 0); row += 1
         
-        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1
         
         label_txt = "Select LED Color Results:"
         label = QLabel(label_txt)
@@ -941,14 +1444,14 @@ class results_tab(QWidget) :
         self.qcb_clrs.currentIndexChanged.connect(self.selected_color)
         self.control_layout.addWidget(self.qcb_clrs, row, 0); row += 1
         
-        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1
         
         self.qbtn_calc_planck = QPushButton("Calculate Planck's Constant")
         self.qbtn_calc_planck.clicked.connect(self.plot_plancks_constant)
         self.qbtn_calc_planck.setEnabled(False)
         self.control_layout.addWidget(self.qbtn_calc_planck, row, 0); row += 1
         
-        self.control_layout.addWidget(QHLine(), row, 0); row += 1 ####################################################################
+        self.control_layout.addWidget(QHLine(), row, 0); row += 1
         
         self.btn_save_fig = QPushButton("Save Current Figure")
         self.btn_save_fig.clicked.connect(self.save_current_fig)
@@ -957,6 +1460,14 @@ class results_tab(QWidget) :
         self.layout.addLayout(self.control_layout, 0, 1)
     
     def update_clr_list(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         num_clrs = len(self.parent.experiment.colors)
         
         if self.parent.added_new_color :
@@ -985,6 +1496,14 @@ class results_tab(QWidget) :
                 self.parent.experiment.create_LED_result_plot(self.data_plot, self.current_fig)
     
     def selected_color(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         clr = self.qcb_clrs.currentText()
         if clr == '' :
             pass
@@ -994,10 +1513,18 @@ class results_tab(QWidget) :
             self.parent.experiment.create_LED_result_plot(self.data_plot, clr)
     
     def save_current_fig(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         if self.parent.experiment.save_folder is None :
             title = "Save Figure Error"
             warning_msg = '\n'.join(["No folder has been selected to save data.",
-                                     "Please return to the \"Experimental Controls\" tab to select a folder."])
+                "Please return to the \"Experimental Controls\" tab to select a folder."])
             warning_window = warningWindow(self)
             warning_window.build_window(title, warning_msg)
         else :
@@ -1005,11 +1532,27 @@ class results_tab(QWidget) :
             self.parent.experiment.save_LED_figure_result(self.data_plot, clr)
     
     def plot_plancks_constant(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.qcb_clrs.setCurrentIndex(-1)
         self.current_fig = 'Plancks Constant Results'
         self.calc_plancks_constant()
     
     def calc_plancks_constant(self) :
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         self.parent.experiment.process_results(progress_bar=self.results_prog_bar)
         self.parent.experiment.calc_Plancks_constant()
         self.parent.experiment.plot_knee_voltages(self.data_plot)
@@ -1025,24 +1568,74 @@ class results_tab(QWidget) :
 
 
 class QHLine(QFrame):
+    """
+    """
     def __init__(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         super(QHLine, self).__init__()
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)
 
 class QVLine(QFrame):
+    """
+    """
     def __init__(self):
+        """
+        
+
+        Returns
+        -------
+        None.
+
+        """
         super(QVLine, self).__init__()
         self.setFrameShape(QFrame.VLine)
         self.setFrameShadow(QFrame.Sunken)
 
 class data_plots(QWidget) :
+    """
+    """
     def __init__(self, parent) :
+        """
+        
+
+        Parameters
+        ----------
+        parent : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         super(QWidget, self).__init__(parent)
         self.layout = QVBoxLayout(self)
 
 class data_tables(QWidget) :
+    """
+    """
     def __init__(self, parent) :
+        """
+        
+
+        Parameters
+        ----------
+        parent : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         super(QWidget, self).__init__(parent)
         self.layout = QVBoxLayout(self)
 
@@ -1055,7 +1648,27 @@ class data_tables(QWidget) :
 
 
 class MplCanvas(FigureCanvas) :
+    """
+    """
     def __init__(self, parent=None, width=5, height=4, dpi=100):
+        """
+
+        Parameters
+        ----------
+        parent : TYPE, optional
+            DESCRIPTION. The default is None.
+        width : TYPE, optional
+            DESCRIPTION. The default is 5.
+        height : TYPE, optional
+            DESCRIPTION. The default is 4.
+        dpi : TYPE, optional
+            DESCRIPTION. The default is 100.
+
+        Returns
+        -------
+        None.
+
+        """
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         super(MplCanvas, self).__init__(self.fig)
@@ -1064,22 +1677,95 @@ class MplCanvas(FigureCanvas) :
 
 
 class warningWindow(QDialog):
+    """
+    """
     def __init__(self, *args, **kwargs):
+        """
+        
+
+        Parameters
+        ----------
+        *args : TYPE
+            DESCRIPTION.
+        **kwargs : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         super(warningWindow, self).__init__(*args, **kwargs)
         self.title = ''
         self.msg = ''
     
     def set_title(self, title) :
+        """
+        
+
+        Parameters
+        ----------
+        title : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.title = title
     
     def set_msg(self, msg) :
+        """
+        
+
+        Parameters
+        ----------
+        msg : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.msg = msg
     
     def set_text_msgs(self, title, msg) :
+        """
+        
+
+        Parameters
+        ----------
+        title : TYPE
+            DESCRIPTION.
+        msg : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        None.
+
+        """
         self.title = title
         self.msg = msg
     
     def build_window(self, title=None, msg=None) :
+        """
+        
+
+        Parameters
+        ----------
+        title : TYPE, optional
+            DESCRIPTION. The default is None.
+        msg : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
         if title is not None :
             self.title = title
         if msg is not None :
