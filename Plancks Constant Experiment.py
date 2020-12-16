@@ -192,17 +192,17 @@ class Planck_experiment() :
     
     def connect_to_arduino(self, port_str) :
         """
-        
+        Connects to an Arduino on port port_str.
 
         Parameters
         ----------
-        port_str : TYPE
-            DESCRIPTION.
+        port_str : string
+            Port address for the Arduino.
 
         Returns
         -------
         str
-            DESCRIPTION.
+            Description of connection result.
 
         """
         if self.arduino is not None :
@@ -219,7 +219,7 @@ class Planck_experiment() :
     
     def disconnect_from_arduino(self) :
         """
-        
+        Disconnects from the Arduino.
 
         Returns
         -------
@@ -231,12 +231,12 @@ class Planck_experiment() :
     
     def add_exp_data(self, color) :
         """
-        
+        Saves experimental result to data frame.
 
         Parameters
         ----------
-        color : TYPE
-            DESCRIPTION.
+        color : str
+            Name of the color of LED used for experiment.
 
         Returns
         -------
@@ -251,14 +251,14 @@ class Planck_experiment() :
     
     def add_color(self, color, nm) :
         """
-        
+        Adds an LED color to the data frame.
 
         Parameters
         ----------
-        color : TYPE
-            DESCRIPTION.
-        nm : TYPE
-            DESCRIPTION.
+        color : str
+            Color of the LED.
+        nm : str
+            Wavelength or wavelength range fo the LED.
 
         Returns
         -------
@@ -273,7 +273,7 @@ class Planck_experiment() :
     
     def turn_on_Vcc_correction(self) :
         """
-        
+        Send command to Arduino to enable Vcc correction.
 
         Returns
         -------
@@ -285,8 +285,8 @@ class Planck_experiment() :
     
     def turn_off_Vcc_correction(self) :
         """
+        Send command to Arduino to disable Vcc correction.
         
-
         Returns
         -------
         None.
@@ -297,7 +297,7 @@ class Planck_experiment() :
     
     def dump_dfs(self) :
         """
-        
+        Saves data frame of experimental results to file as pickle.
 
         Returns
         -------
@@ -315,7 +315,7 @@ class Planck_experiment() :
 
     def save_dfs(self) :
         """
-        
+        Saves data frame of experimental results to csv file.
 
         Returns
         -------
@@ -341,7 +341,7 @@ class Planck_experiment() :
     
     def load_dfs(self, progress_bar=None) :
         """
-        
+        Loads data frame of experimental results from pickle files.
 
         Parameters
         ----------
@@ -390,14 +390,16 @@ class Planck_experiment() :
     
     def process_results(self, color=None, progress_bar=None) :
         """
-        
+        Calculates the knee voltage for the LED of "color".
 
         Parameters
         ----------
-        color : TYPE, optional
-            DESCRIPTION. The default is None.
-        progress_bar : TYPE, optional
-            DESCRIPTION. The default is None.
+        color : str, optional
+            Color of the LED. If None, all LED results will be calculated.
+            The default is None.
+        progress_bar : TYPE, PyQT5 QProgressBar
+            Progress bar used to show progression through analysis.
+            The default is None.
 
         Returns
         -------
@@ -465,7 +467,7 @@ class Planck_experiment() :
     
     def calc_Plancks_constant(self) :
         """
-        
+        Calculates Planck's constant from all LED knee voltage results.
 
         Returns
         -------
@@ -484,12 +486,12 @@ class Planck_experiment() :
             
             if wl[0] == '???' or clr not in self.analysis_results :
                 continue
-            self.knee_voltages.append( self.analysis_results[clr][0] )
             if len(wl)==2 :
                 wl = ( int(wl[0]) + int(wl[1]) ) / 2.
             else :
                 wl = int(wl[0])
             
+            self.knee_voltages.append( self.analysis_results[clr][0] )
             self.colors_known_wavelength.append( clr )
             self.wavelengths_analysis.append( wl )
         
@@ -510,12 +512,12 @@ class Planck_experiment() :
     
     def plot_knee_voltages(self, canvas) :
         """
-        
+        Plots the results to show knee voltage for each LED.
 
         Parameters
         ----------
-        canvas : TYPE
-            DESCRIPTION.
+        canvas : MplCanvas object
+            Canvas to plot results on.
 
         Returns
         -------
@@ -559,14 +561,15 @@ class Planck_experiment() :
     
     def create_LED_result_plot(self, canvas, color) :
         """
-        
+        Plots the experimental result of an LED with an unspecified wavelength
+        along with its calculated wavelength.
 
         Parameters
         ----------
-        canvas : TYPE
-            DESCRIPTION.
-        color : TYPE
-            DESCRIPTION.
+        canvas : MplCanvas object
+            Canvas to plot results on.
+        color : str
+            Color of LED to plot results for.
 
         Returns
         -------
@@ -630,14 +633,14 @@ class Planck_experiment() :
     
     def save_LED_figure_result(self, canvas, clr) :
         """
-        
+        Saves LED results to file.
 
         Parameters
         ----------
-        canvas : TYPE
-            DESCRIPTION.
-        clr : TYPE
-            DESCRIPTION.
+        canvas : MplCanvas object
+            Canvas data was plotted on.
+        clr : str
+            Color of the LED.
 
         Returns
         -------
@@ -653,14 +656,14 @@ class run_experiment(QThread) :
     notifyProgress = pyqtSignal(int)
     def __init__(self, experiment, canvas=None) :
         """
-        
+        Constructs the run_experiment class.
 
         Parameters
         ----------
-        experiment : TYPE
-            DESCRIPTION.
-        canvas : TYPE, optional
-            DESCRIPTION. The default is None.
+        experiment : Planck_experiment object
+            Stores experimental results.
+        canvas : MplCanvas object, optional
+            Canvas to plot results on. The default is None.
 
         Returns
         -------
@@ -673,7 +676,7 @@ class run_experiment(QThread) :
     
     def update_plot(self) :
         """
-        
+        Updates the experimental data in on screen plot.
 
         Returns
         -------
@@ -706,7 +709,7 @@ class run_experiment(QThread) :
     
     def run(self) :
         """
-        
+        Runs experimental.
 
         Returns
         -------
@@ -738,12 +741,12 @@ class run_experiment(QThread) :
 
 def get_avail_ports() :
     """
-    
+    Search for all available ports with an Arduino connected.
 
     Returns
     -------
-    avail_ports : TYPE
-        DESCRIPTION.
+    avail_ports : list
+        List of ports.
 
     """
     list_ports = serial.tools.list_ports.comports()
@@ -760,7 +763,7 @@ class MainWindow(QMainWindow) :
     """
     def __init__(self) :
         """
-        
+        Initialize MainWindow class.
 
         Returns
         -------
@@ -790,8 +793,6 @@ class MainWindow(QMainWindow) :
         
         self.main_tabs = QTabWidget()
         
-        
-        
         self.main_tabs.addTab(self.intro_tab, "Introduction")
         self.main_tabs.addTab(self.exp_controls, "Experimental Controls")
         self.main_tabs.addTab(self.results_tab, "Experimental Analysis")
@@ -805,12 +806,13 @@ class MainWindow(QMainWindow) :
     
     def tab_changed(self, idx) :
         """
-        
+        Function that runs upon tab change. It updates the color list if the
+        new tab is the results_tab.
 
         Parameters
         ----------
-        idx : TYPE
-            DESCRIPTION.
+        idx : int
+            Index of the newly selected tab.
 
         Returns
         -------
@@ -822,12 +824,12 @@ class MainWindow(QMainWindow) :
     
     def setup_experiment(self, port) :
         """
-        
+        Attempts to connect to the selected Arduino
 
         Parameters
         ----------
-        port : TYPE
-            DESCRIPTION.
+        port : str
+            Port for the Arduino.
 
         Returns
         -------
@@ -851,15 +853,18 @@ class MainWindow(QMainWindow) :
 
 class intro_page(QWidget) :
     """
+    Introduction page widget.
+    Displays information about the experiment and allows the user to connect
+        to a selected Arduino.
     """
     def __init__(self, parent) :
         """
-        
+        Constructs the intro_page class.
 
         Parameters
         ----------
-        parent : TYPE
-            DESCRIPTION.
+        parent : MainWindow object
+            MainWindow object that this object belongs to.
 
         Returns
         -------
@@ -973,7 +978,7 @@ class intro_page(QWidget) :
     
     def search_for_devices(self) :
         """
-        
+        Runs test to find ports that Arduinos are connected to.
 
         Returns
         -------
@@ -992,7 +997,7 @@ class intro_page(QWidget) :
     
     def connect_to_exp(self) :
         """
-        
+        Establishes connect to Arduino.
 
         Returns
         -------
@@ -1005,15 +1010,18 @@ class intro_page(QWidget) :
 
 class exp_controls(QWidget) :
     """
+    Experimental controls widget.
+    Allows the user to add LED color and wavelengths.
+    The experiment is run here and the results are displayed with a plot.
     """
     def __init__(self, parent) :
         """
-        
+        Constructs exp_controls class.
 
         Parameters
         ----------
-        parent : TYPE
-            DESCRIPTION.
+        parent : MainWindow object
+            MainWindow object that this object belongs to.
 
         Returns
         -------
@@ -1132,7 +1140,7 @@ class exp_controls(QWidget) :
     
     def enable_exp(self) :
         """
-        
+        Enables the run experiment button.
 
         Returns
         -------
@@ -1143,7 +1151,7 @@ class exp_controls(QWidget) :
     
     def run_experiment(self) :
         """
-        
+        Runs the experiment.
 
         Returns
         -------
@@ -1160,12 +1168,12 @@ class exp_controls(QWidget) :
     
     def exp_prog_update(self, i) :
         """
-        
+        Updates the progress bar to i%.
 
         Parameters
         ----------
-        i : TYPE
-            DESCRIPTION.
+        i : float
+            Percent the progress bar should display.
 
         Returns
         -------
@@ -1176,12 +1184,12 @@ class exp_controls(QWidget) :
     
     def get_current_data(self, led_color=None) :
         """
-        
+        Runs process to save current experimental results to data frame.
 
         Parameters
         ----------
-        led_color : TYPE, optional
-            DESCRIPTION. The default is None.
+        led_color : str, optional
+            Color of the LED. The default is None.
 
         Returns
         -------
@@ -1200,7 +1208,7 @@ class exp_controls(QWidget) :
         
     def disable_controls(self) :
         """
-        
+        Disables the experiment controls.
 
         Returns
         -------
@@ -1219,7 +1227,7 @@ class exp_controls(QWidget) :
     
     def enable_controls(self) :
         """
-        
+        Enables the experiment controls.
 
         Returns
         -------
@@ -1238,7 +1246,7 @@ class exp_controls(QWidget) :
     
     def update_plot(self) :
         """
-        
+        Updates the plot with current data.
 
         Returns
         -------
@@ -1262,7 +1270,7 @@ class exp_controls(QWidget) :
     
     def update_voltage_correction(self) :
         """
-        
+        Updates voltage correction based on user input.
 
         Returns
         -------
@@ -1277,7 +1285,7 @@ class exp_controls(QWidget) :
     
     def add_new_led_color(self) :
         """
-        
+        Adds a new LED color and wavelength based on user input.
 
         Returns
         -------
@@ -1322,7 +1330,7 @@ class exp_controls(QWidget) :
     
     def get_save_folder(self) :
         """
-        
+        Gets the location of the save folder.
 
         Returns
         -------
@@ -1332,12 +1340,12 @@ class exp_controls(QWidget) :
         folder = os.getcwd()
         if self.parent.experiment.save_folder is not None :
             folder = self.parent.experiment.save_folder
-        folder = QFileDialog.getExistingDirectory(self,"Select Save Directory", folder)
+        folder = QFileDialog.getExistingDirectory(self, "Select Save Directory", folder)
         self.parent.experiment.save_folder = folder
     
     def save_data(self) :
         """
-        
+        Initializes the save data process.
 
         Returns
         -------
@@ -1357,7 +1365,7 @@ class exp_controls(QWidget) :
     
     def load_data(self) :
         """
-        
+        Initializes the load data process.
 
         Returns
         -------
@@ -1393,15 +1401,18 @@ class exp_controls(QWidget) :
 
 class results_tab(QWidget) :
     """
+    Results tab widget.
+    Displays the results for the knee voltage of individual LEDs and the results
+        for Planck's constant.
     """
     def __init__(self, parent) :
         """
-        
+        Initializes the results_tab class.
 
         Parameters
         ----------
-        parent : TYPE
-            DESCRIPTION.
+        parent : MainWindow object
+            MainWindow object that this object belongs to.
 
         Returns
         -------
@@ -1461,7 +1472,7 @@ class results_tab(QWidget) :
     
     def update_clr_list(self) :
         """
-        
+        Updates the list of colors for the drop down menu.
 
         Returns
         -------
@@ -1497,7 +1508,7 @@ class results_tab(QWidget) :
     
     def selected_color(self) :
         """
-        
+        Gets the user selected color.
 
         Returns
         -------
@@ -1514,7 +1525,7 @@ class results_tab(QWidget) :
     
     def save_current_fig(self) :
         """
-        
+        Saves the currently displayed data plot to file.
 
         Returns
         -------
@@ -1533,7 +1544,8 @@ class results_tab(QWidget) :
     
     def plot_plancks_constant(self) :
         """
-        
+        Creates a plot of the knee voltage results and fit used to obtain
+        Planck's constant.
 
         Returns
         -------
@@ -1546,7 +1558,7 @@ class results_tab(QWidget) :
     
     def calc_plancks_constant(self) :
         """
-        
+        Runs the process to calculate Planck's constant.
 
         Returns
         -------
@@ -1572,7 +1584,7 @@ class QHLine(QFrame):
     """
     def __init__(self):
         """
-        
+        Plots a horizontal line across the GUI.
 
         Returns
         -------
@@ -1588,7 +1600,7 @@ class QVLine(QFrame):
     """
     def __init__(self):
         """
-        
+        Plots a vertical line across the GUI.dssdfsdfsdfsdf
 
         Returns
         -------
@@ -1599,45 +1611,7 @@ class QVLine(QFrame):
         self.setFrameShape(QFrame.VLine)
         self.setFrameShadow(QFrame.Sunken)
 
-class data_plots(QWidget) :
-    """
-    """
-    def __init__(self, parent) :
-        """
-        
 
-        Parameters
-        ----------
-        parent : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        super(QWidget, self).__init__(parent)
-        self.layout = QVBoxLayout(self)
-
-class data_tables(QWidget) :
-    """
-    """
-    def __init__(self, parent) :
-        """
-        
-
-        Parameters
-        ----------
-        parent : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        None.
-
-        """
-        super(QWidget, self).__init__(parent)
-        self.layout = QVBoxLayout(self)
 
 
 
@@ -1655,14 +1629,14 @@ class MplCanvas(FigureCanvas) :
 
         Parameters
         ----------
-        parent : TYPE, optional
-            DESCRIPTION. The default is None.
-        width : TYPE, optional
-            DESCRIPTION. The default is 5.
-        height : TYPE, optional
-            DESCRIPTION. The default is 4.
-        dpi : TYPE, optional
-            DESCRIPTION. The default is 100.
+        parent : object, optional
+            This is for the parent object. The default is None.
+        width : int, optional
+            Sets the width of the canvas. The default is 5.
+        height : int, optional
+            Sets the height of the canvas. The default is 4.
+        dpi : int, optional
+            Sets the dpi of the canvas. The default is 100.
 
         Returns
         -------
@@ -1678,6 +1652,9 @@ class MplCanvas(FigureCanvas) :
 
 class warningWindow(QDialog):
     """
+    Default pop up window to display warnings.
+    There are no buttons or selectable options, this window is to display
+        simple information to the user and then have the user close it.
     """
     def __init__(self, *args, **kwargs):
         """
@@ -1701,12 +1678,12 @@ class warningWindow(QDialog):
     
     def set_title(self, title) :
         """
-        
+        Set the window's title.
 
         Parameters
         ----------
-        title : TYPE
-            DESCRIPTION.
+        title : str
+            Window title.
 
         Returns
         -------
@@ -1717,12 +1694,12 @@ class warningWindow(QDialog):
     
     def set_msg(self, msg) :
         """
-        
+        Set the window's main message.
 
         Parameters
         ----------
-        msg : TYPE
-            DESCRIPTION.
+        msg : str
+            Window message.
 
         Returns
         -------
@@ -1733,14 +1710,14 @@ class warningWindow(QDialog):
     
     def set_text_msgs(self, title, msg) :
         """
-        
+        Set window text, title and main message.
 
         Parameters
         ----------
-        title : TYPE
-            DESCRIPTION.
-        msg : TYPE
-            DESCRIPTION.
+        title : str
+            Window title.
+        msg : str
+            Window message.
 
         Returns
         -------
@@ -1752,14 +1729,14 @@ class warningWindow(QDialog):
     
     def build_window(self, title=None, msg=None) :
         """
-        
+        This will create the window and display it.
 
         Parameters
         ----------
-        title : TYPE, optional
-            DESCRIPTION. The default is None.
-        msg : TYPE, optional
-            DESCRIPTION. The default is None.
+        title : str
+            Window title.
+        msg : str
+            Window message.
 
         Returns
         -------
