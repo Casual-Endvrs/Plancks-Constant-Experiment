@@ -419,6 +419,8 @@ class Planck_experiment() :
         num_clrs = len(colors)
         
         for idx in np.arange( num_clrs ) :
+            if use_prog_bar :
+                progress_bar.setValue( 100*idx/num_clrs )
             clr = colors[idx]
             if not self.clr_df_updated[clr] :
                 continue
@@ -461,9 +463,9 @@ class Planck_experiment() :
                     self.analysis_results[clr] = [knee_voltage, 
                                                   result_high.values['m'], 
                                                   result_high.values['b'], 
-                                                  result_high.best_fit]
-            if use_prog_bar :
-                progress_bar.setValue( 100*(idx+1)/num_clrs )
+                                                   result_high.best_fit]
+        if use_prog_bar :
+            progress_bar.setValue( 100 )
     
     def calc_Plancks_constant(self) :
         """
@@ -545,12 +547,12 @@ class Planck_experiment() :
             fontsize = 15
             error = 100 * ( self.calcd_planck_constant - 6.62607015e-34 ) / self.calcd_planck_constant
             canvas.axes.text(np.min(x), 0.95*np.max(self.knee_voltages), 
-                "Experimental Result for\nPlanck\'s Constant: %.4e Js" %self.calcd_planck_constant, 
+                "Experimental Result for\nPlanck\'s Constant: %.2e Js" %self.calcd_planck_constant, 
                 fontsize=fontsize)
             canvas.axes.text(np.min(x), 0.9*np.max(self.knee_voltages), 
                 "Error: %.2f%%" %error, fontsize=fontsize)
             
-            canvas.axes.set_xlabel("LED Color Wavelength [1e6 1/nm]")
+            canvas.axes.set_xlabel("Inverse of LED Color Wavelength [1e6 1/nm]")
             canvas.axes.set_ylabel("Knee Voltage [V]")
             
             x_labels = [ '%.1f' %(1e-6*i) for i in canvas.axes.get_xticks() ]
@@ -616,7 +618,7 @@ class Planck_experiment() :
                                  fontsize=fontsize); height -= 0.075
                 
                 canvas.axes.set_xlabel('Supplied Voltage [V]', fontsize=fontsize)
-                canvas.axes.set_ylabel('Voltage After LED [V]', fontsize=fontsize)
+                canvas.axes.set_ylabel('Voltage Across Resistor [V]', fontsize=fontsize)
                 canvas.axes.set_xticklabels(canvas.axes.get_xticks(), fontsize=fontsize)
                 canvas.axes.set_yticklabels(canvas.axes.get_yticks(), fontsize=fontsize)
                 canvas.axes.legend(loc=4, prop={'size': fontsize})
@@ -690,7 +692,7 @@ class run_experiment(QThread) :
         fontsize = 15
         self.canvas.axes.plot(xdata, self.experiment.current_data, 'r')
         self.canvas.axes.set_xlabel('Supplied Voltage [V]', fontsize=fontsize)
-        self.canvas.axes.set_ylabel('Voltage After LED [V]', fontsize=fontsize)
+        self.canvas.axes.set_ylabel('Voltage Across Resistor [V]', fontsize=fontsize)
         self.canvas.axes.set_xticklabels(self.canvas.axes.get_xticks(), fontsize=fontsize)
         self.canvas.axes.set_yticklabels(self.canvas.axes.get_yticks(), fontsize=fontsize)
         
@@ -900,8 +902,13 @@ class intro_page(QWidget) :
         self.instruction_tabs = QTabWidget()
         
         self.intro_instructions = "\n".join([
+            "Two websites that discuss the experiment and the theory and math behind it are:",
+            "\thttps://educatech.in/measurement-of-plancks-constant-through-knee-voltage-of-leds/",
+            "\thttps://www.scienceinschool.org/2014/issue28/planck",
+            "",
             "Circuit pin connections: (Note: A circuit diagram is provided in the \"Circuit Diagram\" tab.)",
-            "     MCP 4725 Vdd --> Aruidno +5V"                 "     MCP 4725 GND --> Aruidno GND",
+            "     MCP 4725 Vdd --> Aruidno +5V",
+            "     MCP 4725 GND --> Aruidno GND",
             "     MCP 4725 SCL --> Aruidno A4",
             "     MCP 4725 SDA --> Aruidno A5",
             "     MCP 4725 A0 --> Aruidno GND",
@@ -1261,7 +1268,7 @@ class exp_controls(QWidget) :
         fontsize = 15
         self.data_plot.axes.plot(xdata, current_data, 'r')
         self.data_plot.axes.set_xlabel('Supplied Voltage [V]', fontsize=fontsize)
-        self.data_plot.axes.set_ylabel('Voltage After LED [V]', fontsize=fontsize)
+        self.data_plot.axes.set_ylabel('Voltage Across Resistor [V]', fontsize=fontsize)
         self.data_plot.axes.set_xticklabels(self.data_plot.axes.get_xticks(), fontsize=fontsize)
         self.data_plot.axes.set_yticklabels(self.data_plot.axes.get_yticks(), fontsize=fontsize)
         self.data_plot.fig.tight_layout()
