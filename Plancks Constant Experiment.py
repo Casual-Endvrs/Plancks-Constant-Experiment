@@ -552,7 +552,7 @@ class Planck_experiment() :
             canvas.axes.text(np.min(x), 0.9*np.max(self.knee_voltages), 
                 "Error: %.2f%%" %error, fontsize=fontsize)
             
-            canvas.axes.set_xlabel("Inverse of LED Color Wavelength [1e6 1/nm]")
+            canvas.axes.set_xlabel("Inverse of Wavelength [1e6 1/nm]")
             canvas.axes.set_ylabel("Knee Voltage [V]")
             
             x_labels = [ '%.1f' %(1e-6*i) for i in canvas.axes.get_xticks() ]
