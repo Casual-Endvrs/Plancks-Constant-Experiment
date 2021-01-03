@@ -903,15 +903,15 @@ class intro_page(QWidget) :
         
         self.intro_instructions = "\n".join([
             "Two websites that discuss the experiment and the theory and math behind it are:",
-            "\thttps://educatech.in/measurement-of-plancks-constant-through-knee-voltage-of-leds/",
-            "\thttps://www.scienceinschool.org/2014/issue28/planck",
+            "     https://educatech.in/measurement-of-plancks-constant-through-knee-voltage-of-leds/",
+            "     https://www.scienceinschool.org/2014/issue28/planck",
             "",
             "Circuit pin connections: (Note: A circuit diagram is provided in the \"Circuit Diagram\" tab.)",
-            "     MCP 4725 Vdd --> Aruidno +5V",
-            "     MCP 4725 GND --> Aruidno GND",
-            "     MCP 4725 SCL --> Aruidno A4",
-            "     MCP 4725 SDA --> Aruidno A5",
-            "     MCP 4725 A0 --> Aruidno GND",
+            "     MCP 4725 Vdd --> Arduino +5V",
+            "     MCP 4725 GND --> Arduino GND",
+            "     MCP 4725 SCL --> Arduino A4",
+            "     MCP 4725 SDA --> Arduino A5",
+            "     MCP 4725 A0 --> Arduino GND",
             "     MCP 4725 Vout --> LED to be measured --> Resistor (2.2 kOhm) --> GND",
             "     (Optional): Arduino Pin 13 --> indicator LED --> Resistor (2.2 kOhm) --> GND",
             "",
@@ -1170,8 +1170,8 @@ class exp_controls(QWidget) :
         led_color = self.exp_led_color.currentText()
         self.running_exp = run_experiment(experiment=self.parent.experiment, canvas=self.data_plot)
         self.running_exp.notifyProgress.connect(self.exp_prog_update)
-        self.running_exp.start()
         self.running_exp.finished.connect(lambda: self.get_current_data(led_color))
+        self.running_exp.start()
     
     def exp_prog_update(self, i) :
         """
